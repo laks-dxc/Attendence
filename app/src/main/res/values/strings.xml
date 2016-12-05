@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Attendence</string>
+    <string name="internet">Awaiting Internet Connection...</string>
+    <string name="powerdby">Powered by Laurel Solutions</string>
+    <string name="accountlogin">Employee Login</string>
+
+    <string name="button_submit">LogIn</string>
+    <string name="username">Employee MailId</string>
+    <string name="password">PassWord</string>
+
+    <string name="usernameempty">Employee ID Not Empty</string>
+    <string name="passwordempty">Password Not Empty</string>
+
+    <string name="laurel">LAUREL</string>
+    <string name="title_activity_main">MainActivity</string>
+
+
+    <string name="cancel">cancel</string>
+    <string name="gps_network_not_enabled">Gps</string>
+    <string name="open_location_settings">Open Location Settings </string>
+    <string name="title_activity_attendence">Attendence</string>
+</resources>

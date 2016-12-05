@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "760894355327",
+    "firebase_url": "https://attendence-9b6d2.firebaseio.com",
+    "project_id": "attendence-9b6d2",
+    "storage_bucket": "attendence-9b6d2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760894355327:android:fb07e97fccbc29a0",
+        "android_client_info": {
+          "package_name": "com.laurel.attendence"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "760894355327-bdh6n6qfobq41r9aosabdv2qtu196b9m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBS5n7awcESdRhf6bINGBEeztctcYMLClI"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
