@@ -1,44 +1,48 @@
 package com.laurel.attendence;
 
 import android.*;
+import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+
 import android.view.View;
+
 import android.widget.Button;
 import android.widget.Toast;
-
-import com.firebase.client.DataSnapshot;
+import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
+//import com.firebase.client.DatabaseError;
 import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.firebase.auth.FirebaseAuth;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.sql.Time;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 
 public class Attendence extends Activity {
     double lat;
     double lng;
+    SharedPreferences pref;
+
     Button scan, in, out;
     String empId;
     int q = 0;
@@ -48,13 +52,14 @@ public class Attendence extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_attendence);
-        Firebase.setAndroidContext(getApplicationContext());
+        pref = getSharedPreferences(Config.MAIN, MODE_PRIVATE);
+        Firebase.setAndroidContext(this);
+        // Firebase.setAndroidContext(getApplicationContext());
         scan = (Button) findViewById(R.id.scan);
         in = (Button) findViewById(R.id.emp_in);
         out = (Button) findViewById(R.id.emp_out);
         empId = LoginAccount.empId;
-        setGPSCoordinates();
-        dateAndTime();
+
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
@@ -67,23 +72,57 @@ public class Attendence extends Activity {
                     , android.Manifest.permission.ACCESS_FINE_LOCATION
             }, q);
         }
+//        public boolean onCreateOptionsMenu(Menu menu) {
+//            // Inflate the menu; this adds items to the action bar if it is present.
+//            getMenuInflater().inflate(R.menu.menu_main, menu);
+//            return true;
+//        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d("over","91");
+
+        super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        Log.e("over","over");
+        return true;
     }
 
     public void scanQR(View v) {
         try {
+            Log.d("scan","90");
             Intent intent = new Intent(ACTION_SCAN);
             intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
             startActivityForResult(intent, 0);
-
         } catch (ActivityNotFoundException anfe) {
             Log.e("scane", anfe.getMessage());
-            // showDialog(Attendence.this, "No Scanner Found", "Download a scanner code activity?", "Yes", "No").show();
+            showDialog(Attendence.this, "No Scanner Found", "Download a scanner code activity?", "Yes", "No").show();
         }
     }
+    private static AlertDialog showDialog(final Activity act, CharSequence title, CharSequence message, CharSequence buttonYes, CharSequence buttonNo) {
+        AlertDialog.Builder downloadDialog = new AlertDialog.Builder(act);
+        downloadDialog.setTitle(title);
+        downloadDialog.setMessage(message);
+        downloadDialog.setPositiveButton(buttonYes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Uri uri = Uri.parse("market://search?q=pname:" + "com.google.zxing.client.android");
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                try {
+                    act.startActivity(intent);
+                } catch (ActivityNotFoundException anfe) {
 
+                }
+            }
+        });
+        downloadDialog.setNegativeButton(buttonNo, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialogInterface, int i) {
+            }
+        });
+        return downloadDialog.show();
+    }
     private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
     private static final int CAMERA_CAPTURE_VIDEO_REQUEST_CODE = 200;
-
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int MEDIA_TYPE_VIDEO = 2;
 
@@ -102,7 +141,6 @@ public class Attendence extends Activity {
                 Toast.makeText(getApplicationContext(),
                         "User cancelled image capture", Toast.LENGTH_SHORT)
                         .show();
-
             } else {
                 // failed to capture image
                 Toast.makeText(getApplicationContext(),
@@ -131,10 +169,8 @@ public class Attendence extends Activity {
                         .show();
             }
         }
-
         if (requestCode == 0) {
             if (resultCode == RESULT_OK) {
-
                 String contents = intent.getStringExtra("SCAN_RESULT");
                 Log.e("contents", contents);
                 if (contents.equals("Laurel Solutions")) {
@@ -142,30 +178,22 @@ public class Attendence extends Activity {
                     out.setVisibility(View.VISIBLE);
                     in.setVisibility(View.VISIBLE);
                 }
-
             }
         }
     }
-
     private void setGPSCoordinates() {
-
         try {
             LocationManager locManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
             Criteria criteria = new Criteria();
             criteria.setPowerRequirement(Criteria.POWER_LOW);
             String provider = locManager.getBestProvider(criteria, true);
-
             locManager.requestLocationUpdates(provider, 0, 0, new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
                     lat = location.getLatitude();
                     lng = location.getLongitude();
-
                     Log.d("latlon", "" + lat + "," + lng);
-
                 }
-
                 @Override
                 public void onStatusChanged(String provider, int status, Bundle extras) {
                 }
@@ -180,16 +208,14 @@ public class Attendence extends Activity {
             });
 
             Location location = locManager.getLastKnownLocation(provider);
-
             lat = location.getLatitude();
             lng = location.getLongitude();
-
             Log.d("newLoc", lat + "," + lng);
         } catch (SecurityException e) {
             Log.e("seexp", e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            //Log.e("seexp", e.getMessage());
+
         }
     }
 
@@ -208,94 +234,72 @@ public class Attendence extends Activity {
         time = date.substring(11, 19);
         Log.e("date", time);
         Pojo pojo = new Pojo();
-        pojo.setLatitude(lat);
-        pojo.setLongitude(lng);
-        pojo.setTime(time);
+        Log.e("in251", pojo.toString());
 
     }
-
     final Pojo pojo = new Pojo();
-
     public void in(View v) {
-
         try {
-
-            Log.e("in", "in");
-            Firebase ref = new Firebase(Config.FIREBASE_URL);
-            Log.e("in", "222");
-            //  ref.child("sowmya").child(year).child(mon).child(dat).child("In").setValue(pojo);
-
-            ref.child("hai").child("bye").setValue(pojo);
-            Log.e("in", "226");
-            ref.addValueEventListener(new ValueEventListener() {
-
-                @Override
-
-                public void onDataChange(DataSnapshot snapshot) {
-                    for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-
-                        //Getting the data from snapshot
-
-                        Log.e("gpsget", Pojo.class + "");
-
-                        //GpsSettr gpsSettr1 = postSnapshot.getValue(GpsSettr.class);
-                        //Adding it to a string
-                        // Log.e("gps","GpsLot  "+gpsSettr1.getLat_array());
-                    }
-                }
-
-                @Override
-                public void onCancelled(FirebaseError firebaseError) {
-                    System.out.println("The read failed: " + firebaseError.getMessage());
-                }
-            });
-
-
-        } catch (Exception e) {
-            Log.e("fire", e.getMessage());
-        }
-    }
-
-    public void out(View v) {
-        try {
-
+            setGPSCoordinates();
+            dateAndTime();
+            pojo.setLatitude(lat);
+            pojo.setLongitude(lng);
+            pojo.setTime(time);
             Log.e("out", "out");
             Log.e("time", year + mon + dat + time + "");
+            empId = empId.replace("@gmail.com","");
+            Log.e("share",pref.getString(Config.USER_EMAIL,""));
+
+
             Firebase ref = new Firebase(Config.FIREBASE_URL);
-            ref.child("sowmya").child(year).child(mon).child(dat).child("Out").setValue(pojo);
+            ref.child(
+                    FirebaseAuth.getInstance().getCurrentUser().getUid()).child(empId).child(year).child(mon).child(dat).child("In").setValue(pojo);
         } catch (Exception e) {
             Log.e("fire", e.getMessage());
         }
+//        setGPSCoordinates();
+//        dateAndTime();
+//        try {
+//            pojo.setLatitude(lat);
+//            pojo.setLongitude(lng);
+//            pojo.setTime(time);
+//            Log.e("in", pojo.toString());
+//////           final Firebase ref = new Firebase(Config.FIREBASE_URL);
+////////            Log.e("authToken", );
+//////            ref.authWithPassword("sowmya@gmail.com", "123456", new Firebase.AuthResultHandler() {
+//////                @Override
+//////                public void onAuthenticated(AuthData authData) {
+//////                    Log.d("authData", authData.getUid());
+//////                    ref.child(authData.getUid().replace("@","_")).child(year).child(mon).child(dat).child("In").setValue(pojo);
+//////                }
+////                @Override
+////                public void onAuthenticationError(FirebaseError firebaseError) {
+////                    Log.d("authData", firebaseError.getMessage());
+////                }
+////            });
+//            Log.e("in", "222");
+//            // ref.child("hai").child("bye").setValue(pojo);
+//            Log.e("in", "226");
+//        } catch (Exception e) {
+//            Log.e("fire", e.getMessage());
+//        }
     }
-}
+    public void out(View v) {
+        try {
+            setGPSCoordinates();
+            dateAndTime();
+            pojo.setLatitude(lat);
+            pojo.setLongitude(lng);
+            pojo.setTime(time);
+            Log.e("out", "out");
+            Log.e("time", year + mon + dat + time + "");
+             empId = empId.replace("@gmail.com","");
 
-class Pojo {
-
-    private Double latitude;
-    private Double longitude;
-    private String time;
-
-    public Double getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(Double latitude) {
-        this.latitude = latitude;
-    }
-
-    public Double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(Double longitude) {
-        this.longitude = longitude;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
+            Firebase ref = new Firebase(Config.FIREBASE_URL);
+            ref.child(
+                    FirebaseAuth.getInstance().getCurrentUser().getUid()).child(empId).child(year).child(mon).child(dat).child("Out").setValue(pojo);
+        } catch (Exception e) {
+            Log.e("fire", e.getMessage());
+        }
     }
 }

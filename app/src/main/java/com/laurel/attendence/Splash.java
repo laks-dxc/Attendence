@@ -15,7 +15,6 @@ import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.TextView;
 
-
 public class Splash extends Activity {
 
 

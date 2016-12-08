@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "760894355327-jffa4epf40co7fmactfbdiak3bel3pmg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.laurel.attendence",
+            "certificate_hash": "79572047A8B393D691D3BD6983E72EF43B82DE88"
+          }
+        },
+        {
           "client_id": "760894355327-bdh6n6qfobq41r9aosabdv2qtu196b9m.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,8 +37,13 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "760894355327-bdh6n6qfobq41r9aosabdv2qtu196b9m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         },
         "ads_service": {
           "status": 2
