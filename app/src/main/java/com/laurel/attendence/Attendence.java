@@ -17,6 +17,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -28,6 +29,7 @@ import android.view.View;
 
 import android.widget.Button;
 import android.widget.Toast;
+
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
 //import com.firebase.client.DatabaseError;
@@ -41,8 +43,10 @@ import java.util.Date;
 public class Attendence extends Activity {
     double lat;
     double lng;
-    SharedPreferences pref;
-
+    UserSessionManager session;
+    Button btnLogout;
+    boolean gps_enabled = false;
+    boolean network_enabled = false;
     Button scan, in, out;
     String empId;
     int q = 0;
@@ -52,12 +56,25 @@ public class Attendence extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_attendence);
-        pref = getSharedPreferences(Config.MAIN, MODE_PRIVATE);
+
+        // Session class instance
+        session = new UserSessionManager(getApplicationContext());
         Firebase.setAndroidContext(this);
         // Firebase.setAndroidContext(getApplicationContext());
         scan = (Button) findViewById(R.id.scan);
         in = (Button) findViewById(R.id.emp_in);
         out = (Button) findViewById(R.id.emp_out);
+        btnLogout = (Button) findViewById(R.id.btnLogout);
+
+        Toast.makeText(getApplicationContext(),
+                "User Login Status: " + session.isUserLoggedIn(),
+                Toast.LENGTH_LONG).show();
+        // Check user login (this is the important point)
+        // If User is not logged in , This will redirect user to LoginActivity
+        // and finish current activity from activity stack.
+        if (session.checkLogin())
+            finish();
+
         empId = LoginAccount.empId;
 
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -79,19 +96,10 @@ public class Attendence extends Activity {
 //        }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        Log.d("over","91");
-
-        super.onCreateOptionsMenu(menu);
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        Log.e("over","over");
-        return true;
-    }
 
     public void scanQR(View v) {
         try {
-            Log.d("scan","90");
+            Log.d("scan", "90");
             Intent intent = new Intent(ACTION_SCAN);
             intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
             startActivityForResult(intent, 0);
@@ -100,6 +108,7 @@ public class Attendence extends Activity {
             showDialog(Attendence.this, "No Scanner Found", "Download a scanner code activity?", "Yes", "No").show();
         }
     }
+
     private static AlertDialog showDialog(final Activity act, CharSequence title, CharSequence message, CharSequence buttonYes, CharSequence buttonNo) {
         AlertDialog.Builder downloadDialog = new AlertDialog.Builder(act);
         downloadDialog.setTitle(title);
@@ -121,6 +130,7 @@ public class Attendence extends Activity {
         });
         return downloadDialog.show();
     }
+
     private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
     private static final int CAMERA_CAPTURE_VIDEO_REQUEST_CODE = 200;
     public static final int MEDIA_TYPE_IMAGE = 1;
@@ -129,7 +139,6 @@ public class Attendence extends Activity {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == CAMERA_CAPTURE_IMAGE_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-
                 // successfully captured the image
                 // launching upload activity
                 // launchUploadActivity(true);
@@ -181,6 +190,7 @@ public class Attendence extends Activity {
             }
         }
     }
+
     private void setGPSCoordinates() {
         try {
             LocationManager locManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -194,6 +204,7 @@ public class Attendence extends Activity {
                     lng = location.getLongitude();
                     Log.d("latlon", "" + lat + "," + lng);
                 }
+
                 @Override
                 public void onStatusChanged(String provider, int status, Bundle extras) {
                 }
@@ -237,7 +248,9 @@ public class Attendence extends Activity {
         Log.e("in251", pojo.toString());
 
     }
+
     final Pojo pojo = new Pojo();
+
     public void in(View v) {
         try {
             setGPSCoordinates();
@@ -247,13 +260,22 @@ public class Attendence extends Activity {
             pojo.setTime(time);
             Log.e("out", "out");
             Log.e("time", year + mon + dat + time + "");
-            empId = empId.replace("@gmail.com","");
-            Log.e("share",pref.getString(Config.USER_EMAIL,""));
+            empId = empId.replace("@gmail.com", "");
+            if (pojo.getLatitude() != 0 && pojo.getLongitude() != 0) {
+                Firebase ref = new Firebase(Config.FIREBASE_URL);
+                ref.child(
+                        FirebaseAuth.getInstance().getCurrentUser().getUid()).child(empId).child(year).child(mon).child(dat).child("In").setValue(pojo);
+                lat = 0.00;
+                lng = 0.00;
 
+            } else {
+                gps();
+                Log.d("gps", "271");
+                //  Firebase ref = new Firebase(Config.FIREBASE_URL);
+                //  ref.child(
+                //         FirebaseAuth.getInstance().getCurrentUser().getUid()).child(empId).child(year).child(mon).child(dat).child("In").setValue(pojo);
 
-            Firebase ref = new Firebase(Config.FIREBASE_URL);
-            ref.child(
-                    FirebaseAuth.getInstance().getCurrentUser().getUid()).child(empId).child(year).child(mon).child(dat).child("In").setValue(pojo);
+            }
         } catch (Exception e) {
             Log.e("fire", e.getMessage());
         }
@@ -284,6 +306,7 @@ public class Attendence extends Activity {
 //            Log.e("fire", e.getMessage());
 //        }
     }
+
     public void out(View v) {
         try {
             setGPSCoordinates();
@@ -293,13 +316,79 @@ public class Attendence extends Activity {
             pojo.setTime(time);
             Log.e("out", "out");
             Log.e("time", year + mon + dat + time + "");
-             empId = empId.replace("@gmail.com","");
+            empId = empId.replace("@gmail.com", "");
+            if (pojo.getLatitude() != 0 && pojo.getLongitude() != 0) {
+                Firebase ref = new Firebase(Config.FIREBASE_URL);
+                ref.child(
+                        FirebaseAuth.getInstance().getCurrentUser().getUid()).child(empId).child(year).child(mon).child(dat).child("Out").setValue(pojo);
+                lat = 0.00;
+                lng = 0.00;
 
-            Firebase ref = new Firebase(Config.FIREBASE_URL);
-            ref.child(
-                    FirebaseAuth.getInstance().getCurrentUser().getUid()).child(empId).child(year).child(mon).child(dat).child("Out").setValue(pojo);
-        } catch (Exception e) {
+            } else {
+                gps();
+//                Firebase ref = new Firebase(Config.FIREBASE_URL);
+//                ref.child(
+//                        FirebaseAuth.getInstance().getCurrentUser().getUid()).child(empId).child(year).child(mon).child(dat).child("Out").setValue(pojo);
+            }
+        } catch (
+                Exception e
+                )
+
+        {
             Log.e("fire", e.getMessage());
+        }
+
+    }
+
+    public void logout(View v) {
+        // Clear the User session data
+        // and redirect user to LoginActivity
+        session.logoutUser();
+    }
+
+
+    public void gps() {
+        LocationManager lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Log.e("ex", ex.getMessage() + "");
+        }
+
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch (Exception ex) {
+
+            Log.e("ex", ex.getMessage() + "");
+        }
+
+        if (!gps_enabled && !network_enabled) {
+            // notify user
+
+            android.support.v7.app.AlertDialog.Builder dialog = new android.support.v7.app.AlertDialog.Builder(this);
+            dialog.setMessage(this.getResources().getString(R.string.gps_network_not_enabled));
+            dialog.setPositiveButton(this.getResources().getString(R.string.open_location_settings), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // TODO Auto-generated method stub
+                    Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+
+                    startActivity(myIntent);
+                    //get gps
+                }
+            });
+            dialog.setNegativeButton(this.getString(R.string.cancel), new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // TODO Auto-generated method stub
+
+                }
+            });
+            dialog.show();
         }
     }
 }
+
+

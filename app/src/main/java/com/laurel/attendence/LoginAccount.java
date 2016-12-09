@@ -30,20 +30,19 @@ public class LoginAccount extends Activity implements View.OnClickListener {
 
     EditText user;
     EditText pass;
-    SharedPreferences pref;
-    SharedPreferences.Editor editor;
     Button login;
-    Context context;
-    FirebaseUser firebaseUser;
+    UserSessionManager session;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_account);
-        pref = getSharedPreferences(Config.MAIN, MODE_PRIVATE);
+        session = new UserSessionManager(getApplicationContext());
+
         user = (EditText) findViewById(R.id.user);
         pass = (EditText) findViewById(R.id.password);
         login = (Button) findViewById(R.id.button);
+
         // pref = getSharedPreferences(Config.MAIN, MODE_PRIVATE);
         login.setOnClickListener(this);
         Firebase.setAndroidContext(this);
@@ -53,12 +52,6 @@ public class LoginAccount extends Activity implements View.OnClickListener {
             startActivity(i);
         }*/
 
-        boolean res = pref.getBoolean(Config.LOG, false);
-        if (res) {
-            Intent i = new Intent(this, Attendence.class);
-            startActivity(i);
-
-        }
 
         try {
 
@@ -84,7 +77,9 @@ public class LoginAccount extends Activity implements View.OnClickListener {
 
                 }
             };*/
-
+            Toast.makeText(getApplicationContext(),
+                    "User Login Status: " + session.isUserLoggedIn(),
+                    Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Log.e("fire", e.getMessage());
         }
@@ -97,6 +92,7 @@ public class LoginAccount extends Activity implements View.OnClickListener {
         empId = user.getText().toString().trim();
         String empPass = pass.getText().toString().trim();
         signIn(empId, empPass);
+
     }
 
     private void signIn(String email, String password) {
@@ -111,18 +107,20 @@ public class LoginAccount extends Activity implements View.OnClickListener {
                             Log.d("user", "signInWithEmail:failed", task.getException());
                             Toast.makeText(LoginAccount.this, "Emp failed", Toast.LENGTH_SHORT).show();
                         } else {
-                            editor = pref.edit();
-                            editor.putString(Config.USER_EMAIL, empId);
-                            editor.commit();
-                            Log.e("share", pref.getString(Config.USER_EMAIL, ""));
+
                             Log.d("user", "signInWithEmail:onComplete:" + task.isSuccessful());
-                            Intent intent = new Intent(getApplicationContext(), Attendence.class);
-                            startActivity(intent);
+                            session.createUserLoginSession(empId);
+                            Intent i = new Intent(getApplicationContext(), Attendence.class);
+                            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            // Add new Flag to start new Activity
+                            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
                             finish();
                         }
                     }
                 });
     }
+
 
     private boolean validateForm() {
         boolean valid = true;
@@ -141,6 +139,25 @@ public class LoginAccount extends Activity implements View.OnClickListener {
             pass.setError(null);
         }
         return valid;
+    }
+
+    private static final int TIME_INTERVAL = 2000; // # milliseconds, desired time passed between two back presses.
+    private long mBackPressed;
+
+    public void onBackPressed() {
+        if (mBackPressed + TIME_INTERVAL > System.currentTimeMillis()) {
+            Intent intCloseApp = new Intent(Intent.ACTION_MAIN);
+            intCloseApp.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intCloseApp.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+            intCloseApp.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intCloseApp.addCategory(Intent.CATEGORY_HOME);
+            intCloseApp.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intCloseApp);
+        } else {
+            Toast.makeText(getBaseContext(), "Tap back button in order to exit", Toast.LENGTH_SHORT).show();
+        }
+
+        mBackPressed = System.currentTimeMillis();
     }
 //    public boolean onCreateOptionsMenu(Menu menu) {
 //        Log.d("153", "153");

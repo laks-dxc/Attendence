@@ -114,21 +114,6 @@ public class Splash extends Activity {
     }
 
     public void splash() {
-//        Thread timerTread = new Thread() {
-//            public void run() {
-//                try {
-//                   // sleep(1500);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                } finally {
-//                    Intent intent = new Intent(getApplicationContext(), LoginAccount.class);
-//                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-//                    startActivity(intent);
-//                    finish();
-//                }
-//            }
-//        };
-//        timerTread.start();
 
         Intent intent = new Intent(getApplicationContext(), LoginAccount.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
