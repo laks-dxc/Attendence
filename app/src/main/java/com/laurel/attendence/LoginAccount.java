@@ -37,6 +37,7 @@ public class LoginAccount extends Activity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_account);
+
         session = new UserSessionManager(getApplicationContext());
 
         user = (EditText) findViewById(R.id.user);
@@ -54,6 +55,15 @@ public class LoginAccount extends Activity implements View.OnClickListener {
 
 
         try {
+            if (session.isUserLoggedIn()==true){
+                Intent i = new Intent(getApplicationContext(), Attendence.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                // Add new Flag to start new Activity
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+                finish();
+
+            }
 
             //context=getApplicationContext();
             FirebaseApp.initializeApp(this);

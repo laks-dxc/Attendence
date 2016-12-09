@@ -14,12 +14,15 @@ import android.provider.Settings;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class Splash extends Activity {
 
 
     boolean gps_enabled = false;
     boolean network_enabled = false;
+    UserSessionManager session;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,6 +30,8 @@ public class Splash extends Activity {
         setContentView(R.layout.activity_splash);
         isOnline();
         TextView textView=(TextView)findViewById(R.id.redies);
+
+
 /*
             Timer t = new Timer();
             boolean checkConnection=new ApplicationUtility().checkConnection(this);
@@ -48,6 +53,7 @@ public class Splash extends Activity {
             }*/
         LocationManager lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         try {
+
             gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
         } catch (Exception ex) {
             ex.printStackTrace();
